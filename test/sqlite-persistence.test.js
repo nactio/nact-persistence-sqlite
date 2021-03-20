@@ -1,101 +1,76 @@
-/* eslint-env mocha */
+/* eslint-env jest */
 /* eslint-disable no-unused-expressions, no-new */
-const chai = require("chai");
-const chaiAsPromised = require("chai-as-promised");
-chai.use(chaiAsPromised);
-chai.should();
-const expect = chai.expect;
+
 const delay = (time) =>
   new Promise((resolve, reject) => {
     setTimeout(() => resolve(), time);
   });
 const { SQLitePersistenceEngine } = require("../lib");
 const Database = require("better-sqlite3");
-
-const { PersistedEvent, PersistedSnapshot } = require("nact/lib/persistence");
-// const { destroy } = require("../lib/schema");
 const fs = require("fs");
 
-const retry = async (assertion, remainingAttempts, retryInterval = 0) => {
-  if (remainingAttempts <= 1) {
-    return assertion();
-  } else {
-    try {
-      await Promise.resolve(assertion());
-    } catch (e) {
-      await delay(retryInterval);
-      await retry(assertion, remainingAttempts - 1, retryInterval);
-    }
-  }
-};
+const { PersistedEvent, PersistedSnapshot } = require("nact/lib/persistence");
 
-const dbFilename = "test-sqlite-persistence.db";
+const dbFilename = "test-sqlite-persistence.sqlite";
 
 const destroy = () => {
-  fs.unlinkSync(dbFilename);
+  if (fs.existsSync(dbFilename)) fs.unlinkSync(dbFilename);
 };
 
 describe("SQLitePersistenceEngine", function () {
-  const db = Database(dbFilename, { createIfNotExists: true });
+  // const db = Database(dbFilename, { createIfNotExists: true });
 
   describe("existing connection", () => {
-    afterEach(destroy);
+    beforeEach(destroy);
 
-    it("should store values in database", async function () {
+    it("should store values in database", function () {
       const date = new Date().getTime();
       const engine = new SQLitePersistenceEngine(dbFilename, {
         createIfNotExists: true,
       });
-      await retry(
-        async () => {
-          const snapshot1 = new PersistedSnapshot(
-            { message: "hello" },
-            1,
-            "test",
-            date
-          );
-          const snapshot2 = new PersistedSnapshot(
-            { message: "goodbye" },
-            2,
-            "test",
-            date
-          );
-          const snapshot3 = new PersistedSnapshot(
-            { message: "hello" },
-            1,
-            "test2",
-            date
-          );
-          await engine.takeSnapshot(snapshot1);
-          await engine.takeSnapshot(snapshot2);
-          await engine.takeSnapshot(snapshot3);
-
-          const result = db
-            .prepare(
-              "SELECT * FROM snapshot_store WHERE persistence_key = 'test' ORDER BY sequence_nr"
-            )
-            .all()
-            .map(SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel);
-          console.log("result:", result);
-          result.should.be.lengthOf(2).and.deep.equal([snapshot1, snapshot2]);
-          const result2 = db
-            .prepare(
-              "SELECT * FROM snapshot_store WHERE persistence_key = 'test2'"
-            )
-            .all();
-          SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel(
-            result2
-          ).should.deep.equal(snapshot3);
-        },
-        0,
-        50
+      const snapshot1 = new PersistedSnapshot(
+        { message: "hello" },
+        1,
+        "test",
+        date
       );
+      const snapshot2 = new PersistedSnapshot(
+        { message: "goodbye" },
+        2,
+        "test",
+        date
+      );
+      const snapshot3 = new PersistedSnapshot(
+        { message: "hello" },
+        1,
+        "test2",
+        date
+      );
+      engine.takeSnapshot(snapshot1);
+      engine.takeSnapshot(snapshot2);
+      engine.takeSnapshot(snapshot3);
+
+      const result = engine.db
+        .prepare(
+          "SELECT * FROM snapshot_store WHERE persistence_key = 'test' ORDER BY sequence_nr"
+        )
+        .all()
+        .map(SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel);
+      expect(result).toHaveLength(2);
+      expect(result).toEqual([snapshot1, snapshot2]);
+
+      const result2 = engine.db
+        .prepare("SELECT * FROM snapshot_store WHERE persistence_key = 'test2'")
+        .all()
+        .map(SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel);
+      expect(result2).toHaveLength(1);
+      expect(result2).toEqual([snapshot3]);
     });
   });
 
   describe("#tables", function () {
     describe("table creation backwards compatibility", () => {
-      afterEach(destroy);
+      beforeEach(destroy);
 
       // it("should not create database if createIfNotExists is set to false", async function () {
       //   new SQLitePersistenceEngine(connectionString, {
@@ -124,7 +99,7 @@ describe("SQLitePersistenceEngine", function () {
     });
 
     describe("table creation with prefixes, table names, and schemas", () => {
-      afterEach(destroy);
+      beforeEach(destroy);
 
       // it("should not create database if createIfNotExists is set to false", async function () {
       //   new SQLitePersistenceEngine(connectionString, {
@@ -180,7 +155,7 @@ describe("SQLitePersistenceEngine", function () {
   });
 
   describe("#persist", function () {
-    afterEach(destroy);
+    beforeEach(destroy);
 
     const date = new Date().getTime();
     it("should store values in database", async function () {
@@ -209,111 +184,103 @@ describe("SQLitePersistenceEngine", function () {
         undefined,
         date
       );
-      await engine.persist(event1);
-      await engine.persist(event2);
-      await engine.persist(event3);
+      engine.persist(event1);
+      engine.persist(event2);
+      engine.persist(event3);
 
-      const result = (
-        await db.many(
+      const result = engine.db
+        .prepare(
           "SELECT * FROM event_journal WHERE persistence_key = 'test' ORDER BY sequence_nr"
         )
-      ).map(SQLitePersistenceEngine.mapDbModelToDomainModel);
+        .all()
+        .map(SQLitePersistenceEngine.mapDbModelToDomainModel);
 
-      result.should.be.lengthOf(2).and.deep.equal([event1, event2]);
-      const result2 = await db.one(
-        "SELECT * FROM event_journal WHERE persistence_key = 'test2'"
-      );
-      SQLitePersistenceEngine.mapDbModelToDomainModel(
-        result2
-      ).should.deep.equal(event3);
+      console.log("result", result);
+      expect(result).toHaveLength(2);
+      expect(result).toEqual([event1, event2]);
+
+      const result2 = engine.db
+        .prepare("SELECT * FROM event_journal WHERE persistence_key = 'test2'")
+        .all()
+        .map(SQLitePersistenceEngine.mapDbModelToDomainModel);
+      expect(result2).toHaveLength(1);
+      expect(result2).toEqual([event3]);
     });
   });
 
   describe("#takeSnapshot", function () {
-    afterEach(destroy);
+    beforeEach(destroy);
 
     const date = new Date().getTime();
-    it("should store values in database", async function () {
+    it("should store values in database", function () {
       const engine = new SQLitePersistenceEngine(dbFilename, {
         createIfNotExists: true,
       });
-      await retry(
-        async () => {
-          const snapshot1 = new PersistedSnapshot(
-            { message: "hello" },
-            1,
-            "test",
-            date
-          );
-          const snapshot2 = new PersistedSnapshot(
-            { message: "goodbye" },
-            2,
-            "test",
-            date
-          );
-          const snapshot3 = new PersistedSnapshot(
-            { message: "hello" },
-            1,
-            "test2",
-            date
-          );
-          await engine.takeSnapshot(snapshot1);
-          await engine.takeSnapshot(snapshot2);
-          await engine.takeSnapshot(snapshot3);
-
-          const result = (
-            await db.many(
-              "SELECT * FROM snapshot_store WHERE persistence_key = 'test' ORDER BY sequence_nr"
-            )
-          ).map(SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel);
-
-          result.should.be.lengthOf(2).and.deep.equal([snapshot1, snapshot2]);
-          const result2 = await db.one(
-            "SELECT * FROM snapshot_store WHERE persistence_key = 'test2'"
-          );
-          SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel(
-            result2
-          ).should.deep.equal(snapshot3);
-        },
-        0,
-        50
+      const snapshot1 = new PersistedSnapshot(
+        { message: "hello" },
+        1,
+        "test",
+        date
       );
+      const snapshot2 = new PersistedSnapshot(
+        { message: "goodbye" },
+        2,
+        "test",
+        date
+      );
+      const snapshot3 = new PersistedSnapshot(
+        { message: "hello" },
+        1,
+        "test2",
+        date
+      );
+      engine.takeSnapshot(snapshot1);
+      engine.takeSnapshot(snapshot2);
+      engine.takeSnapshot(snapshot3);
+
+      const result = engine.db
+        .prepare(
+          "SELECT * FROM snapshot_store WHERE persistence_key = 'test' ORDER BY sequence_nr"
+        )
+        .all()
+        .map(SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel);
+      expect(result).toHaveLength(2);
+      expect(result).toEqual([snapshot1, snapshot2]);
+
+      const result2 = engine.db
+        .prepare("SELECT * FROM snapshot_store WHERE persistence_key = 'test2'")
+        .all()
+        .map(SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel);
+      expect(result2).toHaveLength(1);
+      expect(result2).toEqual([snapshot3]);
     });
-    it("should store arrays in database", async function () {
+
+    it("should store arrays in database", function () {
       const engine = new SQLitePersistenceEngine(dbFilename, {
         createIfNotExists: true,
       });
-      await retry(
-        async () => {
-          const snapshot1 = new PersistedSnapshot(["hello"], 1, "test3", date);
-          const snapshot2 = new PersistedSnapshot(
-            ["goodbye"],
-            2,
-            "test3",
-            date
-          );
-          const snapshot3 = new PersistedSnapshot(["hello"], 1, "test4", date);
-          await engine.takeSnapshot(snapshot1);
-          await engine.takeSnapshot(snapshot2);
-          await engine.takeSnapshot(snapshot3);
+      const snapshot1 = new PersistedSnapshot(["hello"], 1, "test3", date);
+      const snapshot2 = new PersistedSnapshot(["goodbye"], 2, "test3", date);
+      const snapshot3 = new PersistedSnapshot(["hello"], 1, "test4", date);
+      engine.takeSnapshot(snapshot1);
+      engine.takeSnapshot(snapshot2);
+      engine.takeSnapshot(snapshot3);
 
-          const result = (
-            await db.many(
-              "SELECT * FROM snapshot_store WHERE persistence_key = 'test3' ORDER BY sequence_nr"
-            )
-          ).map(SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel);
+      const result = engine.db
+        .prepare(
+          "SELECT * FROM snapshot_store WHERE persistence_key = 'test3' ORDER BY sequence_nr"
+        )
+        .all()
+        .map(SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel);
+      expect(result).toHaveLength(2);
+      expect(result).toEqual([snapshot1, snapshot2]);
 
-          result.should.be.lengthOf(2).and.deep.equal([snapshot1, snapshot2]);
-          const result2 = await db.one(
-            "SELECT * FROM snapshot_store WHERE persistence_key = 'test4'"
-          );
-          SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel(
-            result2
-          ).should.deep.equal(snapshot3);
-        },
-        0,
-        50
-      );
+      const result2 = engine.db
+        .prepare("SELECT * FROM snapshot_store WHERE persistence_key = 'test4'")
+        .all()
+        .map(SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel);
+      expect(result2).toHaveLength(1);
+      expect(result2).toEqual([snapshot3]);
     });
   });
 
@@ -337,30 +304,30 @@ describe("SQLitePersistenceEngine", function () {
       "test3",
       date
     );
-    let engine;
 
-    beforeEach(async () => {
-      const engine = new SQLitePersistenceEngine(dbFilename, {
+    let engine;
+    beforeEach(() => {
+      destroy();
+      engine = new SQLitePersistenceEngine(dbFilename, {
         createIfNotExists: true,
       });
-      await engine.takeSnapshot(snapshot1);
-      await engine.takeSnapshot(snapshot2);
-      await engine.takeSnapshot(snapshot3);
-    });
-    afterEach(destroy);
-
-    it("should be able to retrieve latest snapshot", async function () {
-      const result = await engine.latestSnapshot("test3");
-      result.should.deep.equal(snapshot3);
+      engine.takeSnapshot(snapshot1);
+      engine.takeSnapshot(snapshot2);
+      engine.takeSnapshot(snapshot3);
     });
 
-    it("should be able to correct handle cases where no snapshot is available", async function () {
-      const result = await engine.latestSnapshot("test4");
-      expect(result).to.equal(undefined);
+    it("should be able to retrieve latest snapshot", function () {
+      const result = engine.latestSnapshot("test3");
+      expect(result).toEqual(snapshot3);
+    });
+
+    it("should be able to correct handle cases where no snapshot is available", function () {
+      const result = engine.latestSnapshot("test4");
+      expect(result).toBeUndefined();
     });
   });
 
-  describe("#events", async function () {
+  fdescribe("#events", function () {
     const date = new Date().getTime();
     const event1 = new PersistedEvent(
       { message: "hello" },
@@ -383,30 +350,30 @@ describe("SQLitePersistenceEngine", function () {
       ["b", "c"],
       date
     );
-    let engine;
 
-    beforeEach(async () => {
-      const engine = new SQLitePersistenceEngine(dbFilename, {
+    let engine;
+    beforeEach(() => {
+      destroy();
+      engine = new SQLitePersistenceEngine(dbFilename, {
         createIfNotExists: true,
       });
-      await engine.persist(event1);
-      await engine.persist(event2);
-      await engine.persist(event3);
+      engine.persist(event1);
+      engine.persist(event2);
+      engine.persist(event3);
     });
-    afterEach(destroy);
 
     it("should be able to retrieve previously persisted events", async function () {
       const result = await engine
         .events("test3")
         .reduce((prev, evt) => [...prev, evt], []);
-      result.should.deep.equal([event1, event2, event3]);
+      expect(result).toEqual([event1, event2, event3]);
     });
 
     it("should be able to specify an offset of previously persisted events", async function () {
       const result = await engine
         .events("test3", 1)
         .reduce((prev, evt) => [...prev, evt], []);
-      result.should.deep.equal([event2, event3]);
+      expect(result).toEqual([event2, event3]);
     });
 
     it("should be able to filter by tag", async function () {
@@ -414,7 +381,7 @@ describe("SQLitePersistenceEngine", function () {
         "b",
         "c",
       ]);
-      result.should.deep.equal([event1, event3]);
+      expect(result).toEqual([event1, event3]);
     });
   });
 });

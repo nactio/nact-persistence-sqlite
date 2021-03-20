@@ -4,11 +4,11 @@
   "description": "nact-persistence-sqlite ⇒ nact + sqlite = your services have never been so persistent...and _fast!_",
   "main": "lib/index.js",
   "scripts": {
-    "test": "nyc mocha ./test/*.js",
-    "interactive-cover": "nyc --reporter=html mocha ./test/*.js && open ./coverage/index.html",
-    "lint": "semistandard",
-    "lint-fix": "semistandard --fix",
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "test": "jest --rootDir ./test",
+    "test:watch": "yarn test --watch",
+    "test:coverage": "jest --rootDir ./test --coverage",
     "prepush": "yarn run test"
   },
   "repository": {
@@ -46,6 +46,7 @@
     "coveralls": "^3.0.0",
     "eslint": "^4.8.0",
     "husky": "^0.14.3",
+    "jest": "^26.6.3",
     "mocha": "^5.1.1",
     "nact": "^7.2.1",
     "nyc": "^11.2.1",
