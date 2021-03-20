@@ -107,7 +107,6 @@ describe("SQLitePersistenceEngine", function () {
         .all()
         .map(SQLitePersistenceEngine.mapDbModelToDomainModel);
 
-      console.log("result", result);
       expect(result).toHaveLength(2);
       expect(result).toEqual([event1, event2]);
 
@@ -124,7 +123,7 @@ describe("SQLitePersistenceEngine", function () {
     beforeEach(destroy);
 
     const date = new Date().getTime();
-    it("should store values in database", function () {
+    it("should store values in database", async () => {
       const engine = new SQLitePersistenceEngine(dbFilename, {
         createIfNotExists: true,
       });
@@ -228,13 +227,13 @@ describe("SQLitePersistenceEngine", function () {
       engine.takeSnapshot(snapshot3);
     });
 
-    it("should be able to retrieve latest snapshot", function () {
-      const result = engine.latestSnapshot("test3");
+    it("should be able to retrieve latest snapshot", async () => {
+      const result = await engine.latestSnapshot("test3");
       expect(result).toEqual(snapshot3);
     });
 
-    it("should be able to correct handle cases where no snapshot is available", function () {
-      const result = engine.latestSnapshot("test4");
+    it("should be able to correct handle cases where no snapshot is available", async () => {
+      const result = await engine.latestSnapshot("test4");
       expect(result).toBeUndefined();
     });
   });
@@ -275,16 +274,18 @@ describe("SQLitePersistenceEngine", function () {
     });
 
     it("should be able to retrieve previously persisted events", async function () {
-      const result = await engine
-        .events("test3")
-        .reduce((prev, evt) => [...prev, evt], []);
+      const result = (await engine.events("test3")).reduce(
+        (prev, evt) => [...prev, evt],
+        []
+      );
       expect(result).toEqual([event1, event2, event3]);
     });
 
     it("should be able to specify an offset of previously persisted events", async function () {
-      const result = await engine
-        .events("test3", 1)
-        .reduce((prev, evt) => [...prev, evt], []);
+      const result = (await engine.events("test3", 1)).reduce(
+        (prev, evt) => [...prev, evt],
+        []
+      );
       expect(result).toEqual([event2, event3]);
     });
 
