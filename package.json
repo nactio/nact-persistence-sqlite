@@ -1,6 +1,6 @@
 {
   "name": "@nprbst/nact-persistence-sqlite",
-  "version": "8.0.2-rc.2",
+  "version": "8.0.2-rc.3",
   "description": "nact-persistence-sqlite ⇒ nact + sqlite = your services have never been so persistent...and _fast!_",
   "main": "lib/index.js",
   "scripts": {
