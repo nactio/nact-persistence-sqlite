@@ -1,10 +1,10 @@
 {
-  "name": "nact-persistence-postgres",
+  "name": "nact-persistence-sqlite",
   "version": "8.0.1",
-  "description": "nact-persistence-postgres ⇒ nact + postresql = your services have never been so persistent",
+  "description": "nact-persistence-sqlite ⇒ nact + sqlite = your services have never been so persistent...and _fast!_",
   "main": "lib/index.js",
   "scripts": {
-    "test": "yarn run lint && nyc mocha ./test/*.js",
+    "test": "nyc mocha ./test/*.js",
     "interactive-cover": "nyc --reporter=html mocha ./test/*.js && open ./coverage/index.html",
     "lint": "semistandard",
     "lint-fix": "semistandard --fix",
@@ -13,10 +13,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/ncthbrt/nact-persistence-postgres"
+    "url": "git://github.com/nprbst/nact-persistence-sqlite"
   },
   "keywords": [
-    "PostgreSQL",
+    "SQLite",
+    "better-sqlite3",
     "persistence",
     "event sourcing",
     "actors",
@@ -28,11 +29,15 @@
     "erlang"
   ],
   "author": "Nick Cuthbert (https://github.com/ncthbrt)",
+  "contributors": [
+    "Nathan Probst (https://github.com/nprbst)"
+  ],
   "license": "Apache-2.0",
   "bugs": {
-    "url": "http://github.com/ncthbrt/nact-persistence-postgres/issues"
+    "url": "http://github.com/nprbst/nact-persistence-sqlite/issues"
   },
   "dependencies": {
+    "better-sqlite3": "^7.1.2",
     "pg-promise": "^10.6.1"
   },
   "devDependencies": {
@@ -42,7 +47,7 @@
     "eslint": "^4.8.0",
     "husky": "^0.14.3",
     "mocha": "^5.1.1",
-    "nact": "^7.0.1",
+    "nact": "^7.2.1",
     "nyc": "^11.2.1",
     "semistandard": "^12.0.1"
   },
