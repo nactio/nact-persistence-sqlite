@@ -3,7 +3,8 @@ on:
     branches:
       - master # Change this to your default branch
 jobs:
-  build-nact:
+  test-nact:
+    name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -16,15 +17,14 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: yarn install    
-    - run: yarn build
     - run: yarn test
       env:
         CI: true
 
   release:
-    name: npm-publish
+    name: NPM Publish
     needs: 
-      - build-nact
+      - test-nact
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
