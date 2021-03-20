@@ -18,8 +18,6 @@ const destroy = () => {
 };
 
 describe("SQLitePersistenceEngine", function () {
-  // const db = Database(dbFilename, { createIfNotExists: true });
-
   describe("existing connection", () => {
     beforeEach(destroy);
 
@@ -65,92 +63,6 @@ describe("SQLitePersistenceEngine", function () {
         .map(SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel);
       expect(result2).toHaveLength(1);
       expect(result2).toEqual([snapshot3]);
-    });
-  });
-
-  describe("#tables", function () {
-    describe("table creation backwards compatibility", () => {
-      beforeEach(destroy);
-
-      // it("should not create database if createIfNotExists is set to false", async function () {
-      //   new SQLitePersistenceEngine(connectionString, {
-      //     createIfNotExists: false,
-      //   });
-      //   await delay(300);
-      //   const query = `
-      //     SELECT table_schema,table_name
-      //     FROM information_schema.tables
-      //     WHERE table_name = 'event_journal';`;
-      //   await db.none(query);
-      // });
-
-      // it("should not be able to create databases with prefixes", async function () {
-      //   new SQLitePersistenceEngine(connectionString, {
-      //     tablePrefix: "test_prefix_",
-      //   });
-      //   await delay(300);
-      //   const query = `
-      //     SELECT table_schema,table_name
-      //     FROM information_schema.tables
-      //     WHERE table_name = 'test_prefix_event_journal';`;
-      //   await db.one(query);
-      //   await db.query(destroy("test_prefix_"));
-      // });
-    });
-
-    describe("table creation with prefixes, table names, and schemas", () => {
-      beforeEach(destroy);
-
-      // it("should not create database if createIfNotExists is set to false", async function () {
-      //   new SQLitePersistenceEngine(connectionString, {
-      //     createIfNotExists: false,
-      //     tablePrefix: "test_schema_",
-      //     schema: "test",
-      //   });
-      //   await delay(300);
-      //   const query = `
-      //     SELECT table_schema,table_name
-      //     FROM information_schema.tables
-      //     WHERE table_name = 'test_schema_event_log' AND table_schema = 'test';`;
-      //   await db.none(query);
-      // });
-
-      // it("should not be able to create databases with prefixes and schema", async function () {
-      //   new SQLitePersistenceEngine(connectionString, {
-      //     tablePrefix: "test_schema_",
-      //     schema: "test",
-      //     eventTable: "event_log",
-      //     snapshotTable: "snapshot_log",
-      //   });
-      //   await delay(300);
-      //   const query = `
-      //     SELECT table_schema,table_name
-      //     FROM information_schema.tables
-      //     WHERE table_name = 'test_schema_event_log' AND table_schema = 'test';`;
-      //   await db.one(query);
-      //   await db.query(
-      //     destroy("test_schema_", "test", "event_log", "snapshot_log")
-      //   );
-      // });
-
-      // it("should be able to create databases with prefixes and schema", async function () {
-      //   new SQLitePersistenceEngine(connectionString, {
-      //     createIfNotExists: true,
-      //     tablePrefix: "test_schema_",
-      //     schema: "test",
-      //     eventTable: "event_log",
-      //     snapshotTable: "snapshot_log",
-      //   });
-      //   await delay(300);
-      //   const query = `
-      //     SELECT table_schema,table_name
-      //     FROM information_schema.tables
-      //     WHERE table_name = 'test_schema_event_log' AND table_schema = 'test';`;
-      //   await db.one(query);
-      //   await db.query(
-      //     destroy("test_schema_", "test", "event_log", "snapshot_log")
-      //   );
-      // });
     });
   });
 
@@ -327,7 +239,7 @@ describe("SQLitePersistenceEngine", function () {
     });
   });
 
-  fdescribe("#events", function () {
+  describe("#events", function () {
     const date = new Date().getTime();
     const event1 = new PersistedEvent(
       { message: "hello" },
