@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
+    "bench": "node ./benchmark",
     "test": "jest --rootDir ./test",
     "test:watch": "yarn test --watch",
     "test:coverage": "jest --rootDir ./test --coverage",
@@ -38,17 +39,24 @@
   },
   "dependencies": {
     "better-sqlite3": "^7.1.2",
+    "onetime": "^5.1.2",
     "pg-promise": "^10.6.1"
   },
   "devDependencies": {
+    "@types/benchmark": "^2.1.0",
+    "benchmark": "^2.1.4",
+    "benny": "^3.6.15",
     "chai": "^4.1.1",
     "chai-as-promised": "^7.1.1",
     "coveralls": "^3.0.0",
     "eslint": "^4.8.0",
     "husky": "^0.14.3",
     "jest": "^26.6.3",
+    "mem": "^8.1.0",
+    "microtime": "^3.0.0",
     "mocha": "^5.1.1",
     "nact": "^7.2.1",
+    "nact-persistence-postgres": "^8.0.1",
     "nyc": "^11.2.1",
     "semistandard": "^12.0.1"
   },

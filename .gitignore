@@ -64,3 +64,9 @@ typings/
 
 # SQLite test dbs
 *.sqlite
+
+# benchmark.js
+benchmark/results/
+
+# Clinic.js
+.clinic/
