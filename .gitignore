@@ -63,7 +63,7 @@ typings/
 .env
 
 # SQLite test dbs
-*.sqlite
+*.sqlite*
 
 # benchmark.js
 benchmark/results/

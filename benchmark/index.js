@@ -101,7 +101,6 @@ const eventsSuite = () =>
       const engine = new SQLitePersistenceEngine(dbFilename, {
         createIfNotExists: true,
       });
-      await delay(1500);
       await seedEngineWithEvents(engine, 100, "test1");
       return async () => engine.events("test1");
     }),
@@ -112,7 +111,6 @@ const eventsSuite = () =>
       const engine = new SQLitePersistenceEngine(dbFilename, {
         createIfNotExists: true,
       });
-      await delay(1500);
       await seedEngineWithEvents(engine, 100, "test1");
       return () => engine.eventsSync("test1");
     }),

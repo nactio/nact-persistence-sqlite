@@ -7,6 +7,7 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "bench": "node ./benchmark",
+    "bench:clean": "rm -f bench*sqlite* && ./benchmark/scripts/teardown-db.sh && ./benchmark/scripts/setup-db.sh && sleep 1",
     "test": "jest --rootDir ./test",
     "test:watch": "yarn test --watch",
     "test:coverage": "jest --rootDir ./test --coverage",
