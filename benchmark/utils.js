@@ -23,8 +23,21 @@ const makeEvent = (i, key) =>
     key
   );
 
+const makeSnapshot = (i, key) =>
+  new PersistedSnapshot(
+    {
+      data: {
+        num: i + 1234567890123456,
+        text: `${i + 1234567890123456}`,
+      },
+    },
+    i,
+    key
+  );
+
 module.exports = {
   delay,
   destroy,
   makeEvent,
+  makeSnapshot,
 };

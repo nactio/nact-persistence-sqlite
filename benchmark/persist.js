@@ -42,26 +42,43 @@ const sqlPersistSync = async () => {
   return () => engine.persistSync(next());
 };
 
+const sqlPersistSyncMemory = async () => {
+  const dbFilename = ":memory:";
+  const engine = new SQLitePersistenceEngine(dbFilename, {
+    createIfNotExists: true,
+  });
+  const next = eventSource();
+  return () => engine.persistSync(next());
+};
+
 const pgPersist = async () => {
   // const connectionString =
   //   "postgres://postgres:testpassword@localhost:5431/testdb";
   const connectionString =
     "postgresql://postgres:secret@localhost:5432/bench-test";
   const engine = new PostgresPersistenceEngine(connectionString);
+  await engine.db.then((db) =>
+    db.none("TRUNCATE TABLE event_journal RESTART IDENTITY;")
+  );
   const next = eventSource();
   return async () => engine.persist(next());
 };
 
 const persistSuite = () =>
   suite(
-    "Nact PersistenceEngine.persist()",
+    "PersistenceEngine.persist()",
     add("SQLitePersistenceEngine.persist()", mem(sqlPersist)),
     add("SQLitePersistenceEngine.persistSync()", mem(sqlPersistSync)),
     add("PostgresPersistenceEngine.persist()", mem(pgPersist)),
+    // For ultimate speed, but kind pointless. Only useful for tests?
+    // add(
+    //   "SQLitePersistenceEngine.sqlPersistSyncMemory()",
+    //   mem(sqlPersistSyncMemory)
+    // ),
     cycle(),
     complete(),
     save({ file: "persist", version: "1.0.0" }),
     save({ file: "persist", format: "chart.html" })
   );
 
-exports.persistSuite = persistSuite;
+module.exports = { persistSuite };

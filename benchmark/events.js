@@ -30,12 +30,24 @@ const sqlEventsSync = async () => {
   return () => engine.eventsSync("test1");
 };
 
+const sqlEventsSyncMemory = async () => {
+  const dbFilename = ":memory:";
+  const engine = new SQLitePersistenceEngine(dbFilename, {
+    createIfNotExists: true,
+  });
+  await seedEngineWithEvents(engine, 100, "test1");
+  return () => engine.eventsSync("test1");
+};
+
 const pgEvents = async () => {
   // const connectionString =
   //   "postgres://postgres:testpassword@localhost:5431/testdb";
   const connectionString =
     "postgresql://postgres:secret@localhost:5432/bench-test";
   const engine = new PostgresPersistenceEngine(connectionString);
+  await engine.db.then((db) =>
+    db.none("TRUNCATE TABLE event_journal RESTART IDENTITY;")
+  );
   seedEngineWithEvents(engine, 100, "test1");
   return async () => engine.events("test1");
 };
@@ -46,6 +58,11 @@ const eventsSuite = () =>
     add("SQLitePersistenceEngine.events()", mem(sqlEvents)),
     add("SQLitePersistenceEngine.eventsSync()", mem(sqlEventsSync)),
     add("PostgresPersistenceEngine.events()", mem(pgEvents)),
+    // For ultimate speed, but kind pointless. Only useful for tests?
+    // add(
+    //   "SQLitePersistenceEngine.sqlEventsSyncMemory()",
+    //   mem(sqlEventsSyncMemory)
+    // ),
     cycle(),
     complete(),
     save({ file: "events", version: "1.0.0" }),
