@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 /* eslint-env jest */
 /* eslint-disable no-unused-expressions, no-new */
 
