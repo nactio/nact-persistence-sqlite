@@ -1,6 +1,6 @@
 {
-  "name": "@nprbst/nact-persistence-sqlite",
-  "version": "8.0.2",
+  "name": "@nactio/nact-persistence-sqlite",
+  "version": "8.0.3",
   "description": "nact-persistence-sqlite ⇒ nact + sqlite = your services have never been so persistent...and _fast!_",
   "main": "lib/index.js",
   "scripts": {
@@ -36,7 +36,7 @@
   ],
   "license": "Apache-2.0",
   "bugs": {
-    "url": "http://github.com/nprbst/nact-persistence-sqlite/issues"
+    "url": "http://github.com/nactio/nact-persistence-sqlite/issues"
   },
   "dependencies": {
     "better-sqlite3": "^7.1.2",
