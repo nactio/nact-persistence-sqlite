@@ -1,22 +1,53 @@
 {
   "name": "@nactio/nact-persistence-sqlite",
-  "version": "8.0.3",
+  "version": "8.1.0",
   "description": "nact-persistence-sqlite ⇒ nact + sqlite = your services have never been so persistent...and _fast!_",
-  "main": "lib/index.js",
   "scripts": {
-    "lint": "eslint",
-    "lint:fix": "eslint --fix",
-    "bench": "node ./benchmark",
+    "bench": "node ./bench",
     "bench:clean": "rm -f bench*sqlite* && ./benchmark/scripts/teardown-db.sh && ./benchmark/scripts/setup-db.sh && sleep 1",
-    "test": "jest --rootDir ./test",
-    "test:watch": "yarn test --watch",
-    "test:coverage": "jest --rootDir ./test --coverage",
-    "prepush": "yarn run test"
+    "build": "run-p build:*",
+    "build:main": "tsc -p tsconfig.json",
+    "build:module": "tsc -p tsconfig.module.json",
+    "fix": "run-s fix:*",
+    "fix:prettier": "prettier \"src/**/*.ts\" --write",
+    "fix:lint": "eslint src --ext .ts --fix",
+    "test": "run-s build test:*",
+    "test:lint": "eslint src --ext .ts",
+    "test:prettier": "prettier \"src/**/*.ts\" --list-different",
+    "test:spelling": "cspell \"{README.md,.github/*.md,src/**/*.ts}\"",
+    "test:unit": "nyc --silent jest",
+    "watch:build": "tsc -p tsconfig.json -w",
+    "watch:test": "nyc --silent jest --watch",
+    "cov": "run-s build test:unit cov:html cov:lcov && open-cli coverage/index.html",
+    "cov:html": "nyc report --reporter=html",
+    "cov:lcov": "nyc report --reporter=lcov",
+    "cov:send": "run-s cov:lcov && codecov",
+    "cov:check": "nyc report && nyc check-coverage --lines 100 --functions 100 --branches 100",
+    "doc": "run-s doc:html && open-cli build/docs/index.html",
+    "doc:html": "typedoc src/ --exclude **/*.spec.ts --target ES6 --mode file --theme ./node_modules/typedoc-theme-dark/dist/dark/ --out build/docs",
+    "doc:json": "typedoc src/ --exclude **/*.spec.ts --target ES6 --mode file --json build/docs/typedoc.json",
+    "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d build/docs",
+    "version": "standard-version",
+    "reset-hard": "git clean -dfx && git reset --hard && yarn",
+    "prepare-release": "run-s reset-hard test cov:check doc:html version doc:publish"
   },
+  "main": "build/main/index.js",
+  "typings": "build/main/index.d.ts",
+  "module": "build/module/index.js",
+  "files": [
+    "build/main",
+    "build/module",
+    "!**/*.spec.*",
+    "!**/*.json",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/nprbst/nact-persistence-sqlite"
   },
+  "license": "Apache-2.0",
   "keywords": [
     "SQLite",
     "better-sqlite3",
@@ -30,38 +61,59 @@
     "actor system",
     "erlang"
   ],
+  "engines": {
+    "node": ">=10"
+  },
   "author": "Nick Cuthbert (https://github.com/ncthbrt)",
   "contributors": [
     "Nathan Probst (https://github.com/nprbst)"
   ],
-  "license": "Apache-2.0",
   "bugs": {
     "url": "http://github.com/nactio/nact-persistence-sqlite/issues"
   },
   "dependencies": {
-    "better-sqlite3": "^7.1.2",
-    "onetime": "^5.1.2",
-    "pg-promise": "^10.6.1"
+    "better-sqlite3": "^7.1.2"
   },
   "devDependencies": {
-    "@types/benchmark": "^2.1.0",
-    "benchmark": "^2.1.4",
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@types/node": "^14.14.37",
+    "@typescript-eslint/eslint-plugin": "^4.0.1",
+    "@typescript-eslint/parser": "^4.0.1",
+    "eslint": "^7.8.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-eslint-comments": "^3.2.0",
+    "eslint-plugin-functional": "^3.0.2",
+    "eslint-plugin-import": "^2.22.0",
+    "gh-pages": "^3.1.0",
+    "npm-run-all": "^4.1.5",
+    "nyc": "^15.1.0",
+    "open-cli": "^6.0.1",
+    "prettier": "^2.1.1",
+    "standard-version": "^9.0.0",
+    "ts-node": "^9.0.0",
+    "typedoc": "^0.19.0",
+    "typedoc-theme-dark": "^0.0.5",
+    "typescript": "^4.0.2",
     "benny": "^3.6.15",
-    "chai": "^4.1.1",
-    "chai-as-promised": "^7.1.1",
-    "coveralls": "^3.0.0",
-    "eslint": "^4.8.0",
-    "husky": "^0.14.3",
+    "codecov": "^3.5.0",
+    "cspell": "^4.1.0",
     "jest": "^26.6.3",
     "mem": "^8.1.0",
     "microtime": "^3.0.0",
-    "mocha": "^5.1.1",
-    "nact": "^7.2.1",
+    "nact": "ncthbrt/nact#next",
     "nact-persistence-postgres": "^8.0.1",
-    "nyc": "^11.2.1",
-    "semistandard": "^12.0.1"
+    "pg-promise": "^10.6.1"
   },
   "peerDependencies": {
-    "nact": "^7.2.1"
+    "nact": "ncthbrt/nact#next"
+  },
+  "prettier": {
+    "singleQuote": true
+  },
+  "nyc": {
+    "extends": "@istanbuljs/nyc-config-typescript",
+    "exclude": [
+      "**/*.spec.js"
+    ]
   }
 }

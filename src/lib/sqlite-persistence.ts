@@ -2,25 +2,29 @@ const {
   AbstractPersistenceEngine,
   PersistedEvent,
   PersistedSnapshot,
-} = require("nact/lib/persistence");
+} = require("nact/@nact/persistence");
 const Database = require("better-sqlite3");
 const { create } = require("./schema");
 const assert = require("assert");
 const fs = require("fs");
 
 class Result {
+  promise: Promise<any>;
+
   constructor(result) {
     this.promise = Promise.resolve(result);
   }
+
   then(...args) {
     return this.promise.then(...args);
   }
+
   reduce(...args) {
     return this.promise.then((result) => result.reduce(...args));
   }
 }
 
-class SQLitePersistenceEngine extends AbstractPersistenceEngine {
+export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
   constructor(
     filename,
     {
@@ -226,5 +230,3 @@ class SQLitePersistenceEngine extends AbstractPersistenceEngine {
     return lastInsertRowid;
   }
 }
-
-module.exports.SQLitePersistenceEngine = SQLitePersistenceEngine;
