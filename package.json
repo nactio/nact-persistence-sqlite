@@ -1,6 +1,6 @@
 {
   "name": "@nactio/nact-persistence-sqlite",
-  "version": "8.1.0",
+  "version": "8.1.0-next.1",
   "description": "nact-persistence-sqlite ⇒ nact + sqlite = your services have never been so persistent...and _fast!_",
   "scripts": {
     "bench": "ts-node -P tsconfig.json --transpile-only ./bench",
@@ -109,7 +109,8 @@
     "typescript": "^4.0.2"
   },
   "peerDependencies": {
-    "nact": "ncthbrt/nact#next"
+    "@nact/core": "1.0.0",
+    "@nact/persistence": "1.0.0"
   },
   "prettier": {
     "singleQuote": true
