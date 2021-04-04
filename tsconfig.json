@@ -40,12 +40,15 @@
     "lib": ["es2017"],
     "types": ["node", "jest"],
     "typeRoots": ["node_modules/@types", "src/types"],
-    "baseUrl": "src",
+    "baseUrl": ".",
     "paths": {
-      "@nact/*": ["../node_modules/nact/@nact/*"]
+      "@nact/*": ["node_modules/@nact/*"]
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "bench/**/*.ts"],
   "exclude": ["node_modules/**", "src/**/*.(test|spec).ts"],
-  "compileOnSave": false
+  "compileOnSave": false,
+  "typedocOptions": {
+    "theme": "node_modules/typedoc-theme-dark/dist/dark/"
+  }
 }

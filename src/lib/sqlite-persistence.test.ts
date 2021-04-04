@@ -6,8 +6,6 @@ import { PersistedEvent, PersistedSnapshot } from '@nact/persistence';
 
 import { SQLitePersistenceEngine } from './sqlite-persistence';
 
-// const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const dbFilename = 'test-sqlite-persistence.sqlite';
 
 const destroy = () => {

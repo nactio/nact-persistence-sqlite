@@ -792,6 +792,11 @@
   dependencies:
     "@babel/types" "^7.3.0"
 
+"@types/benchmark@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@types/benchmark/-/benchmark-2.1.0.tgz#157e2ef22311d3140fb33e82a938a1beb26e78e0"
+  integrity sha512-wxT2/LZn4z0NvSfZirxmBx686CU7EXp299KHkIk79acXpQtgeYHrslFzDacPGXifC0Pe3CEaLup07bgY1PnuQw==
+
 "@types/better-sqlite3@^5.4.1":
   version "5.4.1"
   resolved "https://registry.yarnpkg.com/@types/better-sqlite3/-/better-sqlite3-5.4.1.tgz#d45600bc19f8f41397263d037ca9b0d05df85e58"
@@ -2287,6 +2292,11 @@ delegates@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/delegates/-/delegates-1.0.0.tgz#84c6e159b81904fdca59a0ef44cd870d31250f9a"
   integrity sha1-hMbhWbgZBP3KWaDvRM2HDTElD5o=
+
+denque@^1.2.3:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/denque/-/denque-1.5.0.tgz#773de0686ff2d8ec2ff92914316a47b73b1c73de"
+  integrity sha512-CYiCSgIF1p6EUByQPlGkKnP1M9g0ZV3qMIrqMqZqdwazygIA/YP2vrbcyl1h/WppKJTdl1F85cXIle+394iDAQ==
 
 detect-indent@^6.0.0:
   version "6.0.0"
@@ -4868,9 +4878,12 @@ nact-persistence-postgres@^8.0.1:
   dependencies:
     pg-promise "^10.6.1"
 
-nact@ncthbrt/nact#next:
+nact@^7.6.0:
   version "7.6.0"
-  resolved "https://codeload.github.com/ncthbrt/nact/tar.gz/313f88dba417c7babaffbb69c5818f6e41174115"
+  resolved "https://registry.yarnpkg.com/nact/-/nact-7.6.0.tgz#bd8abe263ad81b3f678b00edf5e4640efe4d06b5"
+  integrity sha512-0UghRQyNUMWLSwPIi7cyp3MXUtMpZLRaSG3bjqEfWO9OxZoUIAMh59raKeoTfnZ33B50CLg3RefXHLQr3kvgmQ==
+  dependencies:
+    denque "^1.2.3"
 
 nanomatch@^1.2.9:
   version "1.2.13"

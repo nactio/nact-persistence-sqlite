@@ -12,6 +12,7 @@
         "mkdir",
         "nact",
         "performant",
+        "postgres",
         "prettierignore",
         "Rowid",
         "transpiled",

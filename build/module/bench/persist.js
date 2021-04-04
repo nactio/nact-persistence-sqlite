@@ -1,0 +1,55 @@
+import { add, complete, cycle, save, suite } from 'benny';
+import mem from 'mem';
+import { PostgresPersistenceEngine } from 'nact-persistence-postgres';
+import { SQLitePersistenceEngine } from '../src';
+import { destroy, makeEvent } from './utils';
+const _events = ((size) => {
+    const _array = [];
+    for (let i = 1; i <= size; i++) {
+        _array.push(makeEvent(i, 'test'));
+    }
+    return _array;
+})(100000);
+const eventGenerator = function* () {
+    for (const event of _events)
+        yield event;
+};
+const eventSource = () => {
+    const gen = eventGenerator();
+    return () => gen.next().value;
+};
+const sqlPersist = async () => {
+    const dbFilename = 'bench-async.sqlite';
+    destroy(dbFilename);
+    const engine = new SQLitePersistenceEngine(dbFilename, {
+        createIfNotExists: true,
+    });
+    const next = eventSource();
+    return async () => engine.persist(next());
+};
+const sqlPersistSync = async () => {
+    const dbFilename = 'bench-sync.sqlite';
+    destroy(dbFilename);
+    const engine = new SQLitePersistenceEngine(dbFilename, {
+        createIfNotExists: true,
+    });
+    const next = eventSource();
+    return () => engine.persistSync(next());
+};
+const pgPersist = async () => {
+    // const connectionString =
+    //   "postgres://postgres:testpassword@localhost:5431/testdb";
+    const connectionString = 'postgresql://postgres:secret@localhost:5432/bench-test';
+    const engine = new PostgresPersistenceEngine(connectionString);
+    await engine.db.then((db) => db.none('TRUNCATE TABLE event_journal RESTART IDENTITY;'));
+    const next = eventSource();
+    return async () => engine.persist(next());
+};
+export const persistSuite = () => suite('PersistenceEngine.persist()', add('SQLitePersistenceEngine.persist()', mem(sqlPersist)), add('SQLitePersistenceEngine.persistSync()', mem(sqlPersistSync)), add('PostgresPersistenceEngine.persist()', mem(pgPersist)), 
+// For ultimate speed, but kind pointless. Only useful for tests?
+// add(
+//   "SQLitePersistenceEngine.sqlPersistSyncMemory()",
+//   mem(sqlPersistSyncMemory)
+// ),
+cycle(), complete(), save({ file: 'persist', version: '1.0.0' }), save({ file: 'persist', format: 'chart.html' }));
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicGVyc2lzdC5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2JlbmNoL3BlcnNpc3QudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUEsT0FBTyxFQUFFLEdBQUcsRUFBRSxRQUFRLEVBQUUsS0FBSyxFQUFFLElBQUksRUFBRSxLQUFLLEVBQUUsTUFBTSxPQUFPLENBQUM7QUFDMUQsT0FBTyxHQUFHLE1BQU0sS0FBSyxDQUFDO0FBQ3RCLE9BQU8sRUFBRSx5QkFBeUIsRUFBRSxNQUFNLDJCQUEyQixDQUFDO0FBRXRFLE9BQU8sRUFBRSx1QkFBdUIsRUFBRSxNQUFNLFFBQVEsQ0FBQztBQUVqRCxPQUFPLEVBQUUsT0FBTyxFQUFFLFNBQVMsRUFBRSxNQUFNLFNBQVMsQ0FBQztBQUU3QyxNQUFNLE9BQU8sR0FBRyxDQUFDLENBQUMsSUFBSSxFQUFFLEVBQUU7SUFDeEIsTUFBTSxNQUFNLEdBQUcsRUFBRSxDQUFDO0lBQ2xCLEtBQUssSUFBSSxDQUFDLEdBQUcsQ0FBQyxFQUFFLENBQUMsSUFBSSxJQUFJLEVBQUUsQ0FBQyxFQUFFLEVBQUU7UUFDOUIsTUFBTSxDQUFDLElBQUksQ0FBQyxTQUFTLENBQUMsQ0FBQyxFQUFFLE1BQU0sQ0FBQyxDQUFDLENBQUM7S0FDbkM7SUFDRCxPQUFPLE1BQU0sQ0FBQztBQUNoQixDQUFDLENBQUMsQ0FBQyxNQUFNLENBQUMsQ0FBQztBQUVYLE1BQU0sY0FBYyxHQUFHLFFBQVEsQ0FBQztJQUM5QixLQUFLLE1BQU0sS0FBSyxJQUFJLE9BQU87UUFBRSxNQUFNLEtBQUssQ0FBQztBQUMzQyxDQUFDLENBQUM7QUFFRixNQUFNLFdBQVcsR0FBRyxHQUFHLEVBQUU7SUFDdkIsTUFBTSxHQUFHLEdBQUcsY0FBYyxFQUFFLENBQUM7SUFDN0IsT0FBTyxHQUFHLEVBQUUsQ0FBQyxHQUFHLENBQUMsSUFBSSxFQUFFLENBQUMsS0FBSyxDQUFDO0FBQ2hDLENBQUMsQ0FBQztBQUVGLE1BQU0sVUFBVSxHQUFHLEtBQUssSUFBSSxFQUFFO0lBQzVCLE1BQU0sVUFBVSxHQUFHLG9CQUFvQixDQUFDO0lBQ3hDLE9BQU8sQ0FBQyxVQUFVLENBQUMsQ0FBQztJQUNwQixNQUFNLE1BQU0sR0FBRyxJQUFJLHVCQUF1QixDQUFDLFVBQVUsRUFBRTtRQUNyRCxpQkFBaUIsRUFBRSxJQUFJO0tBQ3hCLENBQUMsQ0FBQztJQUNILE1BQU0sSUFBSSxHQUFHLFdBQVcsRUFBRSxDQUFDO0lBQzNCLE9BQU8sS0FBSyxJQUFJLEVBQUUsQ0FBQyxNQUFNLENBQUMsT0FBTyxDQUFDLElBQUksRUFBRSxDQUFDLENBQUM7QUFDNUMsQ0FBQyxDQUFDO0FBRUYsTUFBTSxjQUFjLEdBQUcsS0FBSyxJQUFJLEVBQUU7SUFDaEMsTUFBTSxVQUFVLEdBQUcsbUJBQW1CLENBQUM7SUFDdkMsT0FBTyxDQUFDLFVBQVUsQ0FBQyxDQUFDO0lBQ3BCLE1BQU0sTUFBTSxHQUFHLElBQUksdUJBQXVCLENBQUMsVUFBVSxFQUFFO1FBQ3JELGlCQUFpQixFQUFFLElBQUk7S0FDeEIsQ0FBQyxDQUFDO0lBQ0gsTUFBTSxJQUFJLEdBQUcsV0FBVyxFQUFFLENBQUM7SUFDM0IsT0FBTyxHQUFHLEVBQUUsQ0FBQyxNQUFNLENBQUMsV0FBVyxDQUFDLElBQUksRUFBRSxDQUFDLENBQUM7QUFDMUMsQ0FBQyxDQUFDO0FBRUYsTUFBTSxTQUFTLEdBQUcsS0FBSyxJQUFJLEVBQUU7SUFDM0IsMkJBQTJCO0lBQzNCLDhEQUE4RDtJQUM5RCxNQUFNLGdCQUFnQixHQUFHLHdEQUF3RCxDQUFDO0lBQ2xGLE1BQU0sTUFBTSxHQUFHLElBQUkseUJBQXlCLENBQUMsZ0JBQWdCLENBQUMsQ0FBQztJQUMvRCxNQUFNLE1BQU0sQ0FBQyxFQUFFLENBQUMsSUFBSSxDQUFDLENBQUMsRUFBRSxFQUFFLEVBQUUsQ0FBQyxFQUFFLENBQUMsSUFBSSxDQUFDLGdEQUFnRCxDQUFDLENBQUMsQ0FBQztJQUN4RixNQUFNLElBQUksR0FBRyxXQUFXLEVBQUUsQ0FBQztJQUMzQixPQUFPLEtBQUssSUFBSSxFQUFFLENBQUMsTUFBTSxDQUFDLE9BQU8sQ0FBQyxJQUFJLEVBQUUsQ0FBQyxDQUFDO0FBQzVDLENBQUMsQ0FBQztBQUVGLE1BQU0sQ0FBQyxNQUFNLFlBQVksR0FBRyxHQUFHLEVBQUUsQ0FDL0IsS0FBSyxDQUNILDZCQUE2QixFQUM3QixHQUFHLENBQUMsbUNBQW1DLEVBQUUsR0FBRyxDQUFDLFVBQVUsQ0FBQyxDQUFDLEVBQ3pELEdBQUcsQ0FBQyx1Q0FBdUMsRUFBRSxHQUFHLENBQUMsY0FBYyxDQUFDLENBQUMsRUFDakUsR0FBRyxDQUFDLHFDQUFxQyxFQUFFLEdBQUcsQ0FBQyxTQUFTLENBQUMsQ0FBQztBQUMxRCxpRUFBaUU7QUFDakUsT0FBTztBQUNQLHNEQUFzRDtBQUN0RCw4QkFBOEI7QUFDOUIsS0FBSztBQUNMLEtBQUssRUFBRSxFQUNQLFFBQVEsRUFBRSxFQUNWLElBQUksQ0FBQyxFQUFFLElBQUksRUFBRSxTQUFTLEVBQUUsT0FBTyxFQUFFLE9BQU8sRUFBRSxDQUFDLEVBQzNDLElBQUksQ0FBQyxFQUFFLElBQUksRUFBRSxTQUFTLEVBQUUsTUFBTSxFQUFFLFlBQVksRUFBRSxDQUFDLENBQ2hELENBQUMifQ==

@@ -1,8 +1,8 @@
 import fs from 'fs';
 
-import Sqlite from 'better-sqlite3';
 import { assert } from '@nact/core';
 import { AbstractPersistenceEngine, PersistedEvent, PersistedSnapshot } from '@nact/persistence';
+import Sqlite from 'better-sqlite3';
 
 import { create } from './schema';
 
@@ -82,7 +82,7 @@ export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
       // Restart and truncate the WAL if over some size limit...
       // if (!err && stat.size > someUnacceptableSize) {
       // Periodically restart and truncate the WAL...
-      console.log('Restaring WAL...');
+      console.log('Check-pointing WAL...');
       this.db.pragma('wal_checkpoint(TRUNCATE)');
     }, 5 * 60 * 1000).unref(); // ...every 5 minutes
     process.on('exit', () => this.close());

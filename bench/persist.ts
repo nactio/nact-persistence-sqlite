@@ -1,9 +1,10 @@
-const { add, complete, cycle, save, suite } = require('benny');
-const { PersistedEvent, PersistedSnapshot } = require('@nact/persistence');
-const { PostgresPersistenceEngine } = require('nact-persistence-postgres');
-const { SQLitePersistenceEngine } = require('../lib');
-const { destroy, makeEvent } = require('./utils');
-const mem = require('mem');
+import { add, complete, cycle, save, suite } from 'benny';
+import mem from 'mem';
+import { PostgresPersistenceEngine } from 'nact-persistence-postgres';
+
+import { SQLitePersistenceEngine } from '../src';
+
+import { destroy, makeEvent } from './utils';
 
 const _events = ((size) => {
   const _array = [];
@@ -42,15 +43,6 @@ const sqlPersistSync = async () => {
   return () => engine.persistSync(next());
 };
 
-const sqlPersistSyncMemory = async () => {
-  const dbFilename = ':memory:';
-  const engine = new SQLitePersistenceEngine(dbFilename, {
-    createIfNotExists: true,
-  });
-  const next = eventSource();
-  return () => engine.persistSync(next());
-};
-
 const pgPersist = async () => {
   // const connectionString =
   //   "postgres://postgres:testpassword@localhost:5431/testdb";
@@ -61,7 +53,7 @@ const pgPersist = async () => {
   return async () => engine.persist(next());
 };
 
-const persistSuite = () =>
+export const persistSuite = () =>
   suite(
     'PersistenceEngine.persist()',
     add('SQLitePersistenceEngine.persist()', mem(sqlPersist)),
@@ -77,5 +69,3 @@ const persistSuite = () =>
     save({ file: 'persist', version: '1.0.0' }),
     save({ file: 'persist', format: 'chart.html' })
   );
-
-module.exports = { persistSuite };
