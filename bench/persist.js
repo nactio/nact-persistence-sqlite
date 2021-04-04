@@ -1,14 +1,14 @@
-const { add, complete, cycle, save, suite } = require("benny");
-const { PersistedEvent, PersistedSnapshot } = require("nact/lib/persistence");
-const { PostgresPersistenceEngine } = require("nact-persistence-postgres");
-const { SQLitePersistenceEngine } = require("../lib");
-const { destroy, makeEvent } = require("./utils");
-const mem = require("mem");
+const { add, complete, cycle, save, suite } = require('benny');
+const { PersistedEvent, PersistedSnapshot } = require('@nact/persistence');
+const { PostgresPersistenceEngine } = require('nact-persistence-postgres');
+const { SQLitePersistenceEngine } = require('../lib');
+const { destroy, makeEvent } = require('./utils');
+const mem = require('mem');
 
 const _events = ((size) => {
   const _array = [];
   for (let i = 1; i <= size; i++) {
-    _array.push(makeEvent(i, "test"));
+    _array.push(makeEvent(i, 'test'));
   }
   return _array;
 })(100000);
@@ -23,7 +23,7 @@ const eventSource = () => {
 };
 
 const sqlPersist = async () => {
-  const dbFilename = "bench-async.sqlite";
+  const dbFilename = 'bench-async.sqlite';
   destroy(dbFilename);
   const engine = new SQLitePersistenceEngine(dbFilename, {
     createIfNotExists: true,
@@ -33,7 +33,7 @@ const sqlPersist = async () => {
 };
 
 const sqlPersistSync = async () => {
-  const dbFilename = "bench-sync.sqlite";
+  const dbFilename = 'bench-sync.sqlite';
   destroy(dbFilename);
   const engine = new SQLitePersistenceEngine(dbFilename, {
     createIfNotExists: true,
@@ -43,7 +43,7 @@ const sqlPersistSync = async () => {
 };
 
 const sqlPersistSyncMemory = async () => {
-  const dbFilename = ":memory:";
+  const dbFilename = ':memory:';
   const engine = new SQLitePersistenceEngine(dbFilename, {
     createIfNotExists: true,
   });
@@ -54,22 +54,19 @@ const sqlPersistSyncMemory = async () => {
 const pgPersist = async () => {
   // const connectionString =
   //   "postgres://postgres:testpassword@localhost:5431/testdb";
-  const connectionString =
-    "postgresql://postgres:secret@localhost:5432/bench-test";
+  const connectionString = 'postgresql://postgres:secret@localhost:5432/bench-test';
   const engine = new PostgresPersistenceEngine(connectionString);
-  await engine.db.then((db) =>
-    db.none("TRUNCATE TABLE event_journal RESTART IDENTITY;")
-  );
+  await engine.db.then((db) => db.none('TRUNCATE TABLE event_journal RESTART IDENTITY;'));
   const next = eventSource();
   return async () => engine.persist(next());
 };
 
 const persistSuite = () =>
   suite(
-    "PersistenceEngine.persist()",
-    add("SQLitePersistenceEngine.persist()", mem(sqlPersist)),
-    add("SQLitePersistenceEngine.persistSync()", mem(sqlPersistSync)),
-    add("PostgresPersistenceEngine.persist()", mem(pgPersist)),
+    'PersistenceEngine.persist()',
+    add('SQLitePersistenceEngine.persist()', mem(sqlPersist)),
+    add('SQLitePersistenceEngine.persistSync()', mem(sqlPersistSync)),
+    add('PostgresPersistenceEngine.persist()', mem(pgPersist)),
     // For ultimate speed, but kind pointless. Only useful for tests?
     // add(
     //   "SQLitePersistenceEngine.sqlPersistSyncMemory()",
@@ -77,8 +74,8 @@ const persistSuite = () =>
     // ),
     cycle(),
     complete(),
-    save({ file: "persist", version: "1.0.0" }),
-    save({ file: "persist", format: "chart.html" })
+    save({ file: 'persist', version: '1.0.0' }),
+    save({ file: 'persist', format: 'chart.html' })
   );
 
 module.exports = { persistSuite };

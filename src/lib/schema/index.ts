@@ -1,19 +1,15 @@
-module.exports.create = (
-  tablePrefix,
-  schema = null,
-  eventTable = "event_journal",
-  snapshotTable = "snapshot_store"
+export const create = (
+  tablePrefix: string,
+  eventTable = 'event_journal',
+  snapshotTable = 'snapshot_store',
+  schema?: string
 ) => {
   const schemaQuery = `
     CREATE SCHEMA IF NOT EXISTS ${schema};
   `;
 
-  const _eventTable = `${
-    schema ? schema + "." : ""
-  }${tablePrefix}${eventTable}`;
-  const _snapshotTable = `${
-    schema ? schema + "." : ""
-  }${tablePrefix}${snapshotTable}`;
+  const _eventTable = `${schema ? schema + '.' : ''}${tablePrefix}${eventTable}`;
+  const _snapshotTable = `${schema ? schema + '.' : ''}${tablePrefix}${snapshotTable}`;
 
   const eventTableQuery = `
     CREATE TABLE IF NOT EXISTS ${_eventTable} (
@@ -41,5 +37,5 @@ module.exports.create = (
 
   return [schema ? schemaQuery : null, eventTableQuery, snapshotTableQuery]
     .filter((n) => n)
-    .join("\n");
+    .join('\n');
 };

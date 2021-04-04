@@ -1,38 +1,66 @@
-const {
-  AbstractPersistenceEngine,
-  PersistedEvent,
-  PersistedSnapshot,
-} = require("nact/@nact/persistence");
-const Database = require("better-sqlite3");
-const { create } = require("./schema");
-const assert = require("assert");
-const fs = require("fs");
+import fs from 'fs';
 
-class Result {
-  promise: Promise<any>;
+import Sqlite from 'better-sqlite3';
+import { assert } from '@nact/core';
+import { AbstractPersistenceEngine, PersistedEvent, PersistedSnapshot } from '@nact/persistence';
 
-  constructor(result) {
+import { create } from './schema';
+
+class Result<TResult> {
+  readonly promise: Promise<TResult>;
+
+  constructor(result: TResult) {
     this.promise = Promise.resolve(result);
   }
 
-  then(...args) {
-    return this.promise.then(...args);
+  then(fn: (value: TResult) => TResult | PromiseLike<TResult>): Promise<TResult> {
+    return this.promise.then(fn);
   }
 
-  reduce(...args) {
-    return this.promise.then((result) => result.reduce(...args));
+  reduce<U>(fn: (prev: U, curr: TResult) => U): Promise<U> {
+    // @ts-expect-error Property 'reduce' does not exist on type 'TResult'.
+    return this.promise.then((result) => result.reduce(fn));
   }
 }
 
+type DBEvent = {
+  readonly persistence_key: string;
+  readonly sequence_nr: number;
+  readonly data: string;
+  readonly tags: string;
+  readonly created_at: number;
+  readonly is_deleted: number;
+};
+
+type DBSnapshot = {
+  readonly persistence_key: string;
+  readonly sequence_nr: number;
+  readonly data: string;
+  readonly created_at: number;
+};
+
 export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
+  readonly schema?: string;
+  readonly tablePrefix: string;
+  readonly eventTable: string;
+  readonly snapshotTable: string;
+
+  db: Sqlite.Database;
+  selectEvents?: Sqlite.Statement<[string, number, number]>;
+  insertEvent?: Sqlite.Statement<PersistedEvent>;
+  selectLatestSnapshot?: Sqlite.Statement<string>;
+  insertSnapshot?: Sqlite.Statement<PersistedSnapshot>;
+
+  timerId: NodeJS.Timeout;
+
   constructor(
-    filename,
+    filename: string,
     {
       createIfNotExists = true,
-      tablePrefix = "",
-      schema = null,
-      eventTable = "event_journal",
-      snapshotTable = "snapshot_store",
+      tablePrefix = '',
+      schema = undefined,
+      eventTable = 'event_journal',
+      snapshotTable = 'snapshot_store',
     } = {}
   ) {
     super();
@@ -40,22 +68,24 @@ export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
     this.schema = schema;
     this.eventTable = eventTable;
     this.snapshotTable = snapshotTable;
-    this.db = Database(filename, { createIfNotExists });
-    this.db.pragma("synchronous = FULL");
-    this.db.pragma("journal_mode = WAL");
-    this.db.exec(create(tablePrefix, schema, eventTable, snapshotTable));
+    this.db = Sqlite(filename, { fileMustExist: !createIfNotExists });
+    this.db.pragma('synchronous = FULL');
+    this.db.pragma('journal_mode = WAL');
+    this.db.exec(create(tablePrefix, eventTable, snapshotTable, schema));
     this.prepareStatements();
     this.timerId = setInterval(() => {
-      const { err } = fs.statSync(filename);
+      try {
+        fs.statSync(filename);
+      } catch (err) {
+        return;
+      }
       // Restart and truncate the WAL if over some size limit...
       // if (!err && stat.size > someUnacceptableSize) {
       // Periodically restart and truncate the WAL...
-      if (!err) {
-        console.log("Restaring WAL...");
-        this.db.pragma("wal_checkpoint(TRUNCATE)");
-      }
-    }, 5 * 60 * 1000).unref(); // ...every 5 mintes
-    process.on("exit", () => this.close());
+      console.log('Restaring WAL...');
+      this.db.pragma('wal_checkpoint(TRUNCATE)');
+    }, 5 * 60 * 1000).unref(); // ...every 5 minutes
+    process.on('exit', () => this.close());
   }
 
   close() {
@@ -63,35 +93,40 @@ export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
     this.db.close();
   }
 
-  static mapDbModelToDomainModel(dbEvent) {
+  static mapDbModelToDomainModel(dbEvent: DBEvent): PersistedEvent {
     return new PersistedEvent(
       JSON.parse(dbEvent.data),
-      Number.parseInt(dbEvent.sequence_nr),
+      // Number.parseInt(dbEvent.sequence_nr),
+      dbEvent.sequence_nr,
       dbEvent.persistence_key,
       JSON.parse(dbEvent.tags),
-      Number.parseInt(dbEvent.created_at),
+      // Number.parseInt(dbEvent.created_at),
+      dbEvent.created_at,
       !!dbEvent.is_deleted
     );
   }
 
-  static mapDbModelToSnapshotDomainModel(dbSnapshot) {
+  static mapDbModelToSnapshotDomainModel(dbSnapshot: DBSnapshot): PersistedSnapshot | undefined {
     if (dbSnapshot) {
       return new PersistedSnapshot(
         JSON.parse(dbSnapshot.data),
-        Number.parseInt(dbSnapshot.sequence_nr),
+        // Number.parseInt(dbSnapshot.sequence_nr),
+        dbSnapshot.sequence_nr,
         dbSnapshot.persistence_key,
-        Number.parseInt(dbSnapshot.created_at)
+        // Number.parseInt(dbSnapshot.created_at)
+        dbSnapshot.created_at
       );
     }
+    return;
   }
 
   prepareStatements() {
-    const _eventTable = `${this.schema ? this.schema + "." : ""}${
-      this.tablePrefix
-    }${this.eventTable}`;
-    const _snapshotTable = `${this.schema ? this.schema + "." : ""}${
-      this.tablePrefix
-    }${this.snapshotTable}`;
+    const _eventTable = `${this.schema ? this.schema + '.' : ''}${this.tablePrefix}${
+      this.eventTable
+    }`;
+    const _snapshotTable = `${this.schema ? this.schema + '.' : ''}${this.tablePrefix}${
+      this.snapshotTable
+    }`;
 
     const selectEvents = `
       SELECT * from ${_eventTable}
@@ -130,24 +165,25 @@ export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
     this.insertSnapshot = this.db.prepare(insertSnapshot);
   }
 
-  events(persistenceKey, offset = 0, limit = 1000000, tags = undefined) {
-    return new Result(this.eventsSync(...arguments));
+  events(persistenceKey: string, offset = 0, limit = 1000000, tags?: readonly string[]) {
+    return new Result(this.eventsSync(persistenceKey, offset, limit, tags));
   }
 
-  eventsSync(persistenceKey, offset = 0, limit = 1000000, tags = undefined) {
-    assert(typeof persistenceKey === "string");
+  eventsSync(persistenceKey: string, offset = 0, limit = 1000000, tags?: readonly string[]) {
+    assert(typeof persistenceKey === 'string');
     assert(Number.isInteger(offset));
     assert(Number.isInteger(limit));
     assert(
       tags === undefined ||
         (tags instanceof Array &&
-          tags.reduce(
-            (isStrArr, curr) => isStrArr && typeof curr === "string",
-            true
-          ))
+          tags.reduce((isStrArr, curr) => isStrArr && typeof curr === 'string', true))
     );
 
-    let events = this.selectEvents
+    if (!this.selectEvents) {
+      throw new Error(`DB Statements not initialized!`);
+    }
+
+    const events = this.selectEvents
       .all(persistenceKey, offset, limit)
       .map(SQLitePersistenceEngine.mapDbModelToDomainModel);
 
@@ -161,72 +197,74 @@ export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
     // This works for now and, without testing, there's no guarantee that the
     // above is more performant.
 
-    if (!!tags) {
-      const hasAllTags = (event) =>
-        tags.every((tag) => event.tags.includes(tag));
+    if (tags) {
+      // @ts-expect-error Property 'tags' does not exist on type 'PersistedEvent'.
+      const hasAllTags = (event: PersistedEvent) => tags.every((tag) => event.tags.includes(tag));
 
-      return events.filter(hasAllTags);
+      return events?.filter(hasAllTags);
     }
 
     return events;
   }
 
-  async persist(persistedEvent) {
-    return new Result(this.persistSync(...arguments));
+  async persist(persistedEvent: PersistedEvent) {
+    return new Result(this.persistSync(persistedEvent));
   }
 
-  persistSync(persistedEvent) {
+  persistSync(persistedEvent: PersistedEvent) {
     if (persistedEvent === undefined) return;
+
+    if (!this.insertEvent) {
+      throw new Error(`DB Statements not initialized!`);
+    }
 
     const { lastInsertRowid } = this.insertEvent.run({
       ...persistedEvent,
+      // @ts-expect-error Property 'data' does not exist on type 'PersistedEvent'.
       data: JSON.stringify(persistedEvent.data),
+      // @ts-expect-error Property 'tags' does not exist on type 'PersistedEvent'.
       tags: JSON.stringify(persistedEvent.tags),
     });
 
-    // INTEGER PRIMARY KEY == RowID
     return lastInsertRowid;
   }
 
-  async latestSnapshot(persistenceKey) {
-    assert(typeof persistenceKey === "string");
-
-    const snap = this.selectLatestSnapshot.get(persistenceKey);
-
-    return new Result(
-      SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel(snap)
-    );
+  async latestSnapshot(persistenceKey: string) {
+    return new Result(this.latestSnapshotSync(persistenceKey));
   }
 
-  latestSnapshotSync(persistenceKey) {
-    assert(typeof persistenceKey === "string");
+  latestSnapshotSync(persistenceKey: string) {
+    assert(typeof persistenceKey === 'string');
+
+    if (!this.selectLatestSnapshot) {
+      throw new Error(`DB Statements not initialized!`);
+    }
 
     const snap = this.selectLatestSnapshot.get(persistenceKey);
 
     return SQLitePersistenceEngine.mapDbModelToSnapshotDomainModel(snap);
   }
 
-  async takeSnapshot(persistedSnapshot) {
-    assert(typeof persistedSnapshot.key === "string");
-    assert(Number.isInteger(persistedSnapshot.sequenceNumber));
-
-    const { lastInsertRowid } = this.insertSnapshot.run({
-      ...persistedSnapshot,
-      data: JSON.stringify(persistedSnapshot.data),
-    });
-    // ordering INTEGER PRIMARY KEY == RowID
-    return new Result(lastInsertRowid);
+  async takeSnapshot(persistedSnapshot: PersistedSnapshot) {
+    return new Result(this.takeSnapshotSync(persistedSnapshot));
   }
 
-  takeSnapshotSync(persistedSnapshot) {
-    assert(typeof persistedSnapshot.key === "string");
+  takeSnapshotSync(persistedSnapshot: PersistedSnapshot) {
+    // @ts-expect-error Property 'key' does not exist on type 'PersistedEvent'.
+    assert(typeof persistedSnapshot.key === 'string');
+    // @ts-expect-error Property 'sequenceNumber' does not exist on type 'PersistedEvent'.
     assert(Number.isInteger(persistedSnapshot.sequenceNumber));
+
+    if (!this.insertSnapshot) {
+      throw new Error(`DB Statements not initialized!`);
+    }
 
     const { lastInsertRowid } = this.insertSnapshot.run({
       ...persistedSnapshot,
+      // @ts-expect-error Property 'data' does not exist on type 'PersistedEvent'.
       data: JSON.stringify(persistedSnapshot.data),
     });
-    // ordering INTEGER PRIMARY KEY == RowID
+
     return lastInsertRowid;
   }
 }
