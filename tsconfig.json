@@ -2,8 +2,8 @@
   "compilerOptions": {
     "incremental": true,
     "target": "es2017",
-    "outDir": "build/main",
-    "rootDir": ".",
+    "outDir": "dist/main",
+    "rootDir": "src",
     "moduleResolution": "node",
     "module": "commonjs",
     "declaration": true,
@@ -42,10 +42,10 @@
     "typeRoots": ["node_modules/@types", "src/types"],
     "baseUrl": ".",
     "paths": {
-      "@nact/*": ["node_modules/@nact/*"]
+      "nact/lib/*": ["node_modules/nact/lib/*"]
     }
   },
-  "include": ["src/**/*.ts", "bench/**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules/**", "src/**/*.(test|spec).ts"],
   "compileOnSave": false,
   "typedocOptions": {

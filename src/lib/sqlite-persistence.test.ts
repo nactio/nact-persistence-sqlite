@@ -2,7 +2,8 @@
 
 import fs from 'fs';
 
-import { PersistedEvent, PersistedSnapshot } from '@nact/persistence';
+// @ts-expect-error Untyped import
+import { PersistedEvent, PersistedSnapshot } from 'nact/lib/persistence';
 
 import { SQLitePersistenceEngine } from './sqlite-persistence';
 

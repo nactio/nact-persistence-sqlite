@@ -1,6 +1,6 @@
 /// <reference types="node" />
-import { AbstractPersistenceEngine, PersistedEvent, PersistedSnapshot } from '@nact/persistence';
 import Sqlite from 'better-sqlite3';
+import { AbstractPersistenceEngine, PersistedEvent, PersistedSnapshot } from 'nact/lib/persistence';
 declare class Result<TResult> {
     readonly promise: Promise<TResult>;
     constructor(result: TResult);
@@ -43,12 +43,12 @@ export declare class SQLitePersistenceEngine extends AbstractPersistenceEngine {
     static mapDbModelToDomainModel(dbEvent: DBEvent): PersistedEvent;
     static mapDbModelToSnapshotDomainModel(dbSnapshot: DBSnapshot): PersistedSnapshot | undefined;
     prepareStatements(): void;
-    events(persistenceKey: string, offset?: number, limit?: number, tags?: readonly string[]): Result<PersistedEvent[]>;
-    eventsSync(persistenceKey: string, offset?: number, limit?: number, tags?: readonly string[]): PersistedEvent[];
-    persist(persistedEvent: PersistedEvent): Promise<string | number | import("integer").IntClass | undefined>;
-    persistSync(persistedEvent: PersistedEvent): string | number | import("integer").IntClass | undefined;
-    latestSnapshot(persistenceKey: string): Promise<PersistedSnapshot | undefined>;
-    latestSnapshotSync(persistenceKey: string): PersistedSnapshot | undefined;
+    events(persistenceKey: string, offset?: number, limit?: number, tags?: readonly string[]): Result<any[]>;
+    eventsSync(persistenceKey: string, offset?: number, limit?: number, tags?: readonly string[]): any[];
+    persist(persistedEvent: PersistedEvent): Promise<import("integer").IntLike | undefined>;
+    persistSync(persistedEvent: PersistedEvent): import("integer").IntLike | undefined;
+    latestSnapshot(persistenceKey: string): Promise<any>;
+    latestSnapshotSync(persistenceKey: string): any;
     takeSnapshot(persistedSnapshot: PersistedSnapshot): Promise<import("integer").IntLike>;
     takeSnapshotSync(persistedSnapshot: PersistedSnapshot): import("integer").IntLike;
 }

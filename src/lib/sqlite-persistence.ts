@@ -1,8 +1,9 @@
+import assert from 'assert';
 import fs from 'fs';
 
-import { assert } from '@nact/core';
-import { AbstractPersistenceEngine, PersistedEvent, PersistedSnapshot } from '@nact/persistence';
 import Sqlite from 'better-sqlite3';
+// @ts-expect-error Untyped import
+import { AbstractPersistenceEngine, PersistedEvent, PersistedSnapshot } from 'nact/lib/persistence';
 
 import { create } from './schema';
 
@@ -198,7 +199,6 @@ export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
     // above is more performant.
 
     if (tags) {
-      // @ts-expect-error Property 'tags' does not exist on type 'PersistedEvent'.
       const hasAllTags = (event: PersistedEvent) => tags.every((tag) => event.tags.includes(tag));
 
       return events?.filter(hasAllTags);
@@ -220,9 +220,7 @@ export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
 
     const { lastInsertRowid } = this.insertEvent.run({
       ...persistedEvent,
-      // @ts-expect-error Property 'data' does not exist on type 'PersistedEvent'.
       data: JSON.stringify(persistedEvent.data),
-      // @ts-expect-error Property 'tags' does not exist on type 'PersistedEvent'.
       tags: JSON.stringify(persistedEvent.tags),
     });
 
@@ -250,9 +248,7 @@ export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
   }
 
   takeSnapshotSync(persistedSnapshot: PersistedSnapshot) {
-    // @ts-expect-error Property 'key' does not exist on type 'PersistedEvent'.
     assert(typeof persistedSnapshot.key === 'string');
-    // @ts-expect-error Property 'sequenceNumber' does not exist on type 'PersistedEvent'.
     assert(Number.isInteger(persistedSnapshot.sequenceNumber));
 
     if (!this.insertSnapshot) {
@@ -261,7 +257,6 @@ export class SQLitePersistenceEngine extends AbstractPersistenceEngine {
 
     const { lastInsertRowid } = this.insertSnapshot.run({
       ...persistedSnapshot,
-      // @ts-expect-error Property 'data' does not exist on type 'PersistedEvent'.
       data: JSON.stringify(persistedSnapshot.data),
     });
 

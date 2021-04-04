@@ -1,7 +1,9 @@
-import { AbstractPersistenceEngine } from '@nact/persistence/persistence-engine';
 import { add, complete, cycle, save, suite } from 'benny';
 import mem from 'mem';
+// @ts-expect-error Untyped import
 import { PostgresPersistenceEngine } from 'nact-persistence-postgres';
+// @ts-expect-error Untyped import
+import { AbstractPersistenceEngine } from 'nact/lib/persistence';
 
 import { SQLitePersistenceEngine } from '../src';
 
@@ -39,8 +41,10 @@ const pgEvents = (
   connectionString = 'postgresql://postgres:secret@localhost:5432/bench-test'
 ) => async () => {
   const engine = new PostgresPersistenceEngine(connectionString);
+  // @ts-ignore
   await engine.db.then((db) => db.none('TRUNCATE TABLE event_journal RESTART IDENTITY;'));
   seedEngineWithEvents(engine, 100, 'test1');
+  // @ts-ignore
   return async () => engine.events('test1');
 };
 

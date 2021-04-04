@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { PersistedEvent, PersistedSnapshot } from '@nact/persistence';
+import { PersistedEvent, PersistedSnapshot } from 'nact/lib/persistence';
 
 export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
