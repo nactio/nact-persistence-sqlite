@@ -1,6 +1,6 @@
 {
   "name": "@nact/nact-persistence-sqlite",
-  "version": "8.1.0-next.1",
+  "version": "8.1.0",
   "description": "nact-persistence-sqlite ⇒ nact + sqlite = your services have never been so persistent...and _fast!_",
   "scripts": {
     "bench": "ts-node -P tsconfig.bench.json --transpile-only ./bench",
